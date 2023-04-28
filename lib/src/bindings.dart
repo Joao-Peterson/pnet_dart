@@ -377,6 +377,70 @@ class libpnet {
 			pnet_callback_t,
 			ffi.Pointer<ffi.Void>)>();
 
+	/// @brief Create a new petri net. All values from the inputs are freed automatically
+	/// @param neg_arcs_map: matrix of arcs weight/direction, where the rows are the places and the columns are the transitions. Represents the number of tokens to be removed from a place. Only negative values. Can be null
+	/// @param pos_arcs_map: matrix of arcs weight/direction, where the rows are the places and the columns are the transitions. Represents the number of tokens to be moved onto a place. Only positive values. Can be null
+	/// @param inhibit_arcs_map: matrix of arcs, where the coluns are the places and the rows are the transitions. Dictates the firing of a transition when a place has zero tokens. Values must be 0 or 1, any non zero number counts as 1. Can be null
+	/// @param reset_arcs_map: matrix of arcs, where the coluns are the places and the rows are the transitions. When a transition occurs it zeroes out the place tokens. Values must be 0 or 1, any non zero number counts as 1. Can be null
+	/// @param places_init: matrix of values, where the columns are the places. The initial values for the places. Values must be a positive value. Must be not null
+	/// @param transitions_delay: matrix of values, were the columns are the transitions. While a place has enough tokens, the transitions will delay it's firing. Values must be positive, given in milli seconds (ms). Can be null
+	/// @param inputs_map: matrix where the columns are the transitions and the rows are inputs. Represents the type of event that will fire that transistion, given by the enumerator pnet_event_t. Can be null
+	/// @param outputs_map: matrix where the columns are the outputs and the rows are places. An output is true when a place has one or more tokens. Values must be 0 or 1, any non zero number counts as 1. Can be null
+	/// @param function: callback function of type pnet_callback_t that is called after firing operations asynchronously, useful for timed transitions. Can be NULL
+	/// @param data: data given by the user to passed on call to the callback function in it's data parameter. A void pointer. Can be NULL
+	/// @return pnet_t struct pointer
+	ffi.Pointer<pnet_t> m_pnet_new(
+		ffi.Pointer<pnet_matrix_t> pos_arcs_map,
+		ffi.Pointer<pnet_matrix_t> neg_arcs_map,
+		ffi.Pointer<pnet_matrix_t> inhibit_arcs_map,
+		ffi.Pointer<pnet_matrix_t> reset_arcs_map,
+		ffi.Pointer<pnet_matrix_t> places_init,
+		ffi.Pointer<pnet_matrix_t> transitions_delay,
+		ffi.Pointer<pnet_matrix_t> inputs_map,
+		ffi.Pointer<pnet_matrix_t> outputs_map,
+		pnet_callback_t function,
+		ffi.Pointer<ffi.Void> data,
+	) {
+		return _m_pnet_new(
+		pos_arcs_map,
+		neg_arcs_map,
+		inhibit_arcs_map,
+		reset_arcs_map,
+		places_init,
+		transitions_delay,
+		inputs_map,
+		outputs_map,
+		function,
+		data,
+		);
+	}
+
+	late final _m_pnet_newPtr = _lookup<
+		ffi.NativeFunction<
+			ffi.Pointer<pnet_t> Function(
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				pnet_callback_t,
+				ffi.Pointer<ffi.Void>)>>('m_pnet_new');
+	late final _m_pnet_new = _m_pnet_newPtr.asFunction<
+		ffi.Pointer<pnet_t> Function(
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			pnet_callback_t,
+			ffi.Pointer<ffi.Void>)>();
+
 	/// @brief create new arcs map object. It's freed by the calls that receive it as argument
 	/// @param transitions_num: number of transitions for the petri net
 	/// @param places_num: number of places for the petri net
