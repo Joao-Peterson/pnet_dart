@@ -1,4 +1,3 @@
-
 import 'pnet_dart_platform_interface.dart';
 
 class PnetDart {

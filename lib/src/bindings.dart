@@ -96,6 +96,8 @@ class libpnet {
 	late final _pnet_matrix_delete = _pnet_matrix_deletePtr
 		.asFunction<void Function(ffi.Pointer<pnet_matrix_t>)>();
 
+    late final native_matrix_delete = _pnet_matrix_deletePtr;
+
 	/// @brief prints a matrix in ascii form
 	void pnet_matrix_print(
 		ffi.Pointer<pnet_matrix_t> matrix,
@@ -572,6 +574,28 @@ class libpnet {
 	late final _pnet_delete =
 		_pnet_deletePtr.asFunction<void Function(ffi.Pointer<pnet_t>)>();
 
+    late final native_pnet_delete = _pnet_deletePtr;
+
+	/// @brief fire the transitions based on the inputs and internal state. Sensitive transitions are NOT updated after firing
+	/// @param pnet: the pnet struct pointer
+	/// @param inputs: matrix of one row and columns the same size of the inputs given on pnet_new()
+	void m_pnet_fire(
+		ffi.Pointer<pnet_t> pnet,
+		ffi.Pointer<pnet_matrix_t> inputs,
+	) {
+		return _m_pnet_fire(
+		pnet,
+		inputs,
+		);
+	}
+
+	late final _m_pnet_firePtr = _lookup<
+		ffi.NativeFunction<
+			ffi.Void Function(
+				ffi.Pointer<pnet_t>, ffi.Pointer<pnet_matrix_t>)>>('m_pnet_fire');
+	late final _m_pnet_fire = _m_pnet_firePtr.asFunction<
+		void Function(ffi.Pointer<pnet_t>, ffi.Pointer<pnet_matrix_t>)>();
+
 	/// @brief fire the transitions based on the inputs and internal state. Sensitive transitions are NOT updated after firing
 	/// @param pnet: the pnet struct pointer
 	/// @param inputs: matrix of one row and columns the same size of the inputs given on pnet_new()
@@ -727,6 +751,10 @@ class pnet_t extends ffi.Struct {
 
   /// < Matrix map of places to outputs
   external ffi.Pointer<pnet_matrix_t> outputs_map;
+
+  /// < If true, the patri is able to to fire, if not the it doesnt. Call pnet_check() to validate beforehand */
+  @ffi.Bool()
+  external bool valid;
 
   /// < The actual places that hold tokens
   external ffi.Pointer<pnet_matrix_t> places;

@@ -4,9 +4,17 @@ import 'dylib.dart';
 import 'pnet_error.dart';
 
 /// matrix of type int, can be constructed by calling PnetMatrix() or PnetMatrix.from()
-class PnetMatrix{
+class PnetMatrix implements ffi.Finalizable{
+
+    // ------------------------------------------------------------ Members ------------------------------------------------------------
+    
     /// pointer to native type matrix
     late ffi.Pointer<pnet_matrix_t> _m;
+
+    /// finalizer used to call native delete methods on dart GC free
+    static final _finalizer = ffi.NativeFinalizer(pnetDylib.native_matrix_delete.cast());
+
+    // ------------------------------------------------------------ Static methods -----------------------------------------------------
 
     /// creates a native matrix from a dart double list
     static List<List<int>> fromNative(ffi.Pointer<pnet_matrix_t> matrix){
@@ -29,7 +37,7 @@ class PnetMatrix{
     /// creates a native matrix from a dart double list
     static ffi.Pointer<pnet_matrix_t> newNative(List<List<int>> values){
         int x = values[0].length;
-        int y = values[0].length;
+        int y = values.length;
         ffi.Pointer<pnet_matrix_t> m = pnetDylib.pnet_matrix_new_zero(x, y);
 
         for(int i = 0; i < y; i++){
@@ -41,6 +49,8 @@ class PnetMatrix{
         return m;
     }
 
+    // ------------------------------------------------------------ Constructors -------------------------------------------------------
+
     /// creates a matrix by passing a 2d list of [values]
     PnetMatrix(List<List<int>> values){
         _m = newNative(values);
@@ -48,6 +58,8 @@ class PnetMatrix{
         if(pnetDylib.pnet_get_error() != pnet_error_t.pnet_info_ok){
             throw PnetException();
         } 
+
+        _finalizer.attach(this, _m.cast());                                         // call the finalizer on the native matrix when 'this' is GC'ed  
     }
 
     /// creates a new empty matrix given it's [x] width and [y] height
@@ -57,6 +69,8 @@ class PnetMatrix{
         if(pnetDylib.pnet_get_error() != pnet_error_t.pnet_info_ok){
             throw PnetException();
         } 
+
+        _finalizer.attach(this, _m.cast());                                         // call the finalizer on the native matrix when 'this' is GC'ed  
     }
 
     /// creates a new matrix as a copy from another [matrix] 
@@ -67,22 +81,11 @@ class PnetMatrix{
         catch (e){
             rethrow;
         }
+        
+        _finalizer.attach(this, _m.cast());                                         // call the finalizer on the native matrix when 'this' is GC'ed  
     }
 
-    /// copy values from a [matrix] to this one
-    void copy(PnetMatrix matrix){
-        try{
-            pnetDylib.pnet_matrix_copy(_m, matrix._m);
-        }
-        catch (e){
-            rethrow;
-        }
-    }
-
-    /// destructor, free memory from the library allocations
-    void dispose(){
-        pnetDylib.pnet_matrix_delete(_m);
-    }
+    // ------------------------------------------------------------ Geters / Setters ---------------------------------------------------
 
     /// get how many columns
     int get x{
@@ -92,6 +95,18 @@ class PnetMatrix{
     /// get how many rows
     int get y{
         return _m.ref.y;
+    }
+
+    // ------------------------------------------------------------ Methods ------------------------------------------------------------
+
+    /// copy values from a [matrix] to this one
+    void copy(PnetMatrix matrix){
+        try{
+            pnetDylib.pnet_matrix_copy(_m, matrix._m);
+        }
+        catch (e){
+            rethrow;
+        }
     }
 
     /// get value at position [x] and [y]

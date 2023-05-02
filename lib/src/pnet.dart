@@ -6,15 +6,23 @@ import 'dylib.dart';
 import 'pnet_error.dart';
 
 /// class that represents a petrinet
-class Pnet{
+class Pnet implements ffi.Finalizable{
+
+    // ------------------------------------------------------------ Members ------------------------------------------------------------
+
     /// pointer to native type petrinet
     late ffi.Pointer<pnet_t> _pnet;
+
+    /// finalizer used to call native delete methods on dart GC free
+    static final _finalizer = ffi.NativeFinalizer(pnetDylib.native_pnet_delete.cast());
 
     /// callback to call on event 
     Function(dynamic)? _callback;
 
     /// callback data to use on event 
     dynamic _callbackData;
+
+    // ------------------------------------------------------------ Constructors -------------------------------------------------------
 
     /// creates a new petri net based on places, arcs, inputs and outputs.
     /// [placesInit] must be passed, all other arcs, input and outputs can be null
@@ -28,20 +36,18 @@ class Pnet{
     /// [outputsMap]        matrix where the columns are the outputs and the rows are places. An output is true when a place has one or more tokens. Values must be 0 or 1, any non zero number counts as 1
     /// [callback]          callback function of type pnet_callback_t that is called after firing operations asynchronously, useful for timed transitions
     /// [data]              data given by the user to passed on call to the callback function in it's data parameter. A void pointer
-    Pnet(
-        {
-        required List<List<int>> placesInit,
+    Pnet({
         List<List<int>>? posArcsMap,
         List<List<int>>? negArcsMap,
         List<List<int>>? inhibitArcsMap,
         List<List<int>>? resetArcsMap,
+        required List<List<int>> placesInit,
         List<List<int>>? transitionsDelay,
         List<List<int>>? inputsMap,
         List<List<int>>? outputsMap,
         Function(dynamic)? callback,
         dynamic data
-        } 
-    ){
+    }){
         // create pnet
         // all optional arguments are checked and exchanged by NULL ptr if necessary
         // callback is NULL by default
@@ -67,23 +73,35 @@ class Pnet{
         if(pnetDylib.pnet_get_error() != pnet_error_t.pnet_info_ok){
             throw PnetException();
         }
+        
+        _finalizer.attach(this, _pnet.cast());                                      // call finalizer (native pnet_delete) on pnet before dart GC frees this Pnet instance
     }
 
-    /// destructor, to deallocate native pnet
-    void dispose(){
-        pnetDylib.pnet_delete(_pnet);
+    // ------------------------------------------------------------ Geters / Setters ---------------------------------------------------
+
+    /// get number of places
+    bool get valid{
+        return _pnet.ref.valid;
     }
 
-    /// fire the petri net
-    void fire({List<List<int>>? inputs}){
-        // get inputs as pnet_matrix
-        ffi.Pointer<pnet_matrix_t> inMatrix = inputs != null ? PnetMatrix.newNative(inputs) : ffi.nullptr;
-        // then allocate a pnet_inputs_t manually
-        ffi.Pointer<pnet_inputs_t> pnetIn = malloc.allocate<pnet_inputs_t>(ffi.sizeOf<pnet_inputs_t>());
-        // set inputs
-        pnetIn.ref.values = inMatrix;
-        // call native fire
-        pnetDylib.pnet_fire(_pnet, pnetIn);
+    /// get number of places
+    int get numPlaces{
+        return _pnet.ref.num_places;
+    }
+
+    /// get number of transitions
+    int get numTransitions{
+        return _pnet.ref.num_transitions;
+    }
+
+    /// get number of inputs
+    int get numInputs{
+        return _pnet.ref.num_inputs;
+    }
+
+    /// get number of outputs
+    int get numOutputs{
+        return _pnet.ref.num_outputs;
     }
 
     /// get places from pnet
@@ -94,6 +112,7 @@ class Pnet{
 
     /// get sensitiveTransitions from pnet
     List<int> get sensitiveTransitions{
+        pnetDylib.pnet_sense(_pnet);                                                // sense transitions first
         var m = PnetMatrix.fromNative(_pnet.ref.sensitive_transitions);
         return m[0];
     }
@@ -102,5 +121,27 @@ class Pnet{
     List<int> get outputs{
         var m = PnetMatrix.fromNative(_pnet.ref.outputs);
         return m[0];
+    }
+
+    // ------------------------------------------------------------ Methods ------------------------------------------------------------
+
+    /// fire the petri net
+    PnetError fire({List<List<int>>? inputs}){
+        if(inputs == null){
+            pnetDylib.m_pnet_fire(_pnet, ffi.nullptr);
+        }
+        else{
+            // get inputs as pnet_matrix
+            ffi.Pointer<pnet_matrix_t> inMatrix = PnetMatrix.newNative(inputs);
+            pnetDylib.m_pnet_fire(_pnet, inMatrix);
+        }
+
+        return PnetError.values[pnetDylib.pnet_get_error()];
+    }
+
+    /// check sensible transitions
+    PnetError sense(){
+        pnetDylib.pnet_sense(_pnet);
+        return PnetError.values[pnetDylib.pnet_get_error()];
     }
 }

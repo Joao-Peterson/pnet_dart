@@ -1,57 +1,43 @@
+import 'dart:ffi' as ffi;
+import 'package:ffi/ffi.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pnet_dart/pnet_dart.dart';
-import 'package:pnet_dart/pnet_dart_platform_interface.dart';
-import 'package:pnet_dart/pnet_dart_method_channel.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:pnet_dart/src/dylib.dart';
 import 'package:pnet_dart/src/pnet_error.dart';
 import 'package:pnet_dart/src/pnet_matrix.dart';
 import 'package:pnet_dart/src/pnet.dart';
 
-class MockPnetDartPlatform
-    with MockPlatformInterfaceMixin
-    implements PnetDartPlatform {
-
-	@override
-	Future<String?> getPlatformVersion() => Future.value('42');
-}
-
 void main() {
-	final PnetDartPlatform initialPlatform = PnetDartPlatform.instance;
 
-	test('$MethodChannelPnetDart is the default instance', () {
-		expect(initialPlatform, isInstanceOf<MethodChannelPnetDart>());
-	});
-
-	test('getPlatformVersion', () async {
-		PnetDart pnetDartPlugin = PnetDart();
-		MockPnetDartPlatform fakePlatform = MockPnetDartPlatform();
-		PnetDartPlatform.instance = fakePlatform;
-
-		expect(await pnetDartPlugin.getPlatformVersion(), '42');
-	});
-
-	test("Pnet test", () {
+	test("Simple pnet test", () {
+        Pnet pnet;
+        
         try {
-            final pnet = Pnet(
-                placesInit: [
-                    [1, 0]
-                ],
+            pnet = Pnet(
                 negArcsMap: [
-                    [-1, 0]
+                    [-1],
+                    [ 0],
                 ],
                 posArcsMap: [
-                    [0, 1]
-                ]
+                    [ 0],
+                    [ 1],
+                ],
+                placesInit: [
+                    [ 1, 0]
+                ],
             );
-
-            pnet.fire();
-            
-            expect(pnet.places[1], 1);
-
-            pnet.dispose();
         } catch (e) {
             fail(e.toString());
         }
+
+        // var code = pnet.sense();
+        // print(ffi.Pointer<Utf8>.fromAddress(pnetDylib.pnet_get_error_msg().address).toDartString());
+
+        print(pnet.places);
+
+        pnet.fire();
+
+        print(pnet.places);
+        expect(pnet.places, [0, 1]);
 	});
 
 	test("Matrix test", () {
@@ -72,8 +58,5 @@ void main() {
 		on PnetException catch(e){
 			fail(e.toString());
 		}
-		
-		m.dispose();
-		m2.dispose();
 	});
 }
