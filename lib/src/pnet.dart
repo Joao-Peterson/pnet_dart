@@ -41,8 +41,8 @@ class Pnet implements ffi.Finalizable{
         List<List<int>>? negArcsMap,
         List<List<int>>? inhibitArcsMap,
         List<List<int>>? resetArcsMap,
-        required List<List<int>> placesInit,
-        List<List<int>>? transitionsDelay,
+        required List<int> placesInit,
+        List<int>? transitionsDelay,
         List<List<int>>? inputsMap,
         List<List<int>>? outputsMap,
         Function(dynamic)? callback,
@@ -55,12 +55,12 @@ class Pnet implements ffi.Finalizable{
         // and in the C implement a function to check for events synchronously, or make a c default callback that sets a global boolean visible to dart.
         // maybe even throw async functionalitty in there somehow    
         _pnet = pnetDylib.m_pnet_new(
-            (posArcsMap != null ? PnetMatrix.newNative(posArcsMap) : ffi.nullptr), 
             (negArcsMap != null ? PnetMatrix.newNative(negArcsMap) : ffi.nullptr), 
+            (posArcsMap != null ? PnetMatrix.newNative(posArcsMap) : ffi.nullptr), 
             (inhibitArcsMap != null ? PnetMatrix.newNative(inhibitArcsMap) : ffi.nullptr), 
             (resetArcsMap != null ? PnetMatrix.newNative(resetArcsMap) : ffi.nullptr), 
-            PnetMatrix.newNative(placesInit), 
-            (transitionsDelay != null ? PnetMatrix.newNative(transitionsDelay) : ffi.nullptr), 
+            PnetMatrix.newNative([placesInit]), 
+            (transitionsDelay != null ? PnetMatrix.newNative([transitionsDelay]) : ffi.nullptr), 
             (inputsMap != null ? PnetMatrix.newNative(inputsMap) : ffi.nullptr), 
             (outputsMap != null ? PnetMatrix.newNative(outputsMap) : ffi.nullptr), 
             ffi.nullptr, 
@@ -73,7 +73,7 @@ class Pnet implements ffi.Finalizable{
         if(pnetDylib.pnet_get_error() != pnet_error_t.pnet_info_ok){
             throw PnetException();
         }
-        
+
         _finalizer.attach(this, _pnet.cast());                                      // call finalizer (native pnet_delete) on pnet before dart GC frees this Pnet instance
     }
 
@@ -121,6 +121,54 @@ class Pnet implements ffi.Finalizable{
     List<int> get outputs{
         var m = PnetMatrix.fromNative(_pnet.ref.outputs);
         return m[0];
+    }
+
+    /// get neg_arcs_map from pnet
+    List<List<int>> get negArcsMap{
+        var m = PnetMatrix.fromNative(_pnet.ref.neg_arcs_map);
+        return m;
+    }
+
+    /// get pos_arcs_map from pnet
+    List<List<int>> get posArcsMap{
+        var m = PnetMatrix.fromNative(_pnet.ref.pos_arcs_map);
+        return m;
+    }
+
+    /// get inhibit_arcs_map from pnet
+    List<List<int>> get inhibitArcsMap{
+        var m = PnetMatrix.fromNative(_pnet.ref.inhibit_arcs_map);
+        return m;
+    }
+
+    /// get reset_arcs_map from pnet
+    List<List<int>> get resetArcsMap{
+        var m = PnetMatrix.fromNative(_pnet.ref.reset_arcs_map);
+        return m;
+    }
+
+    /// get places_init from pnet
+    List<int> get placesInit{
+        var m = PnetMatrix.fromNative(_pnet.ref.places_init);
+        return m[0];
+    }
+
+    /// get transitions_delay from pnet
+    List<int> get transitionsDelay{
+        var m = PnetMatrix.fromNative(_pnet.ref.transitions_delay);
+        return m[0];
+    }
+
+    /// get inputs_map from pnet
+    List<List<int>> get inputsMap{
+        var m = PnetMatrix.fromNative(_pnet.ref.inputs_map);
+        return m;
+    }
+
+    /// get outputs_map from pnet
+    List<List<int>> get outputsMap{
+        var m = PnetMatrix.fromNative(_pnet.ref.outputs_map);
+        return m;
     }
 
     // ------------------------------------------------------------ Methods ------------------------------------------------------------

@@ -10,6 +10,8 @@ add_library(${PROJECT_NAME} SHARED
   "${SOURCE_PATH}/pnet_error.c"
 )
 
+target_link_libraries(${PROJECT_NAME} pthread)
+
 target_compile_options(${PROJECT_NAME} PRIVATE
   -O2 -Wall -Wextra -pedantic -Wmissing-prototypes -Wshadow)
   

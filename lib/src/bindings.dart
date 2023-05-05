@@ -392,8 +392,8 @@ class libpnet {
 	/// @param data: data given by the user to passed on call to the callback function in it's data parameter. A void pointer. Can be NULL
 	/// @return pnet_t struct pointer
 	ffi.Pointer<pnet_t> m_pnet_new(
-		ffi.Pointer<pnet_matrix_t> pos_arcs_map,
 		ffi.Pointer<pnet_matrix_t> neg_arcs_map,
+		ffi.Pointer<pnet_matrix_t> pos_arcs_map,
 		ffi.Pointer<pnet_matrix_t> inhibit_arcs_map,
 		ffi.Pointer<pnet_matrix_t> reset_arcs_map,
 		ffi.Pointer<pnet_matrix_t> places_init,
@@ -404,8 +404,8 @@ class libpnet {
 		ffi.Pointer<ffi.Void> data,
 	) {
 		return _m_pnet_new(
-		pos_arcs_map,
 		neg_arcs_map,
+		pos_arcs_map,
 		inhibit_arcs_map,
 		reset_arcs_map,
 		places_init,

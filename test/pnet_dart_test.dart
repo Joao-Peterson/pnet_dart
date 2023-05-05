@@ -16,33 +16,28 @@ void main() {
                 negArcsMap: [
                     [-1],
                     [ 0],
+                    [-2],
                 ],
                 posArcsMap: [
                     [ 0],
                     [ 1],
+                    [ 0],
                 ],
-                placesInit: [
-                    [ 1, 0]
-                ],
+                placesInit: [1, 0, 32],
             );
         } catch (e) {
             fail(e.toString());
         }
 
-        // var code = pnet.sense();
-        // print(ffi.Pointer<Utf8>.fromAddress(pnetDylib.pnet_get_error_msg().address).toDartString());
-
-        print(pnet.places);
 
         pnet.fire();
 
-        print(pnet.places);
-        expect(pnet.places, [0, 1]);
+        expect(pnet.places, [0, 1, 30]);
 	});
 
 	test("Matrix test", () {
 		final m = PnetMatrix([
-            [0,0,0,0,0],
+            [0,0,0,5,0],
             [0,0,0,0,0],
             [0,0,0,0,0],
             [0,0,0,0,0],
@@ -50,10 +45,13 @@ void main() {
         ]);
 		final PnetMatrix m2;
 		try{
-			m.setValueAt(4, 4, 1);
+			m.set(4, 4, 1);
+			m.set(0, 3, 10);
+			expect(m.get(0, 3), 10);
+
 			m2 = PnetMatrix.from(m);
-			m2.set(5);
-			expect(m2.getValueAt(2, 2), 5);
+			m2.setAll(5);
+			expect(m2.get(2, 2), 5);
 		}
 		on PnetException catch(e){
 			fail(e.toString());

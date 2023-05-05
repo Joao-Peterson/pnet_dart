@@ -22,9 +22,9 @@ class PnetMatrix implements ffi.Finalizable{
         int y = matrix.ref.y;
 
         List<List<int>> m = [];
-        List<int> row = [];
 
         for(int i = 0; i < y; i++){
+            List<int> row = [];
             for(int j = 0; j < x; j++){
                 row.add(matrix.ref.m.elementAt(i).value.elementAt(j).value);
             }
@@ -110,7 +110,7 @@ class PnetMatrix implements ffi.Finalizable{
     }
 
     /// get value at position [x] and [y]
-    int getValueAt(int x, int y){
+    int get(int x, int y){
         if((x >= _m.ref.x) || (y >= _m.ref.y)){
             throw PnetException.custom("pnet_matrix_error_value_out_of_bounds");
         }
@@ -119,7 +119,7 @@ class PnetMatrix implements ffi.Finalizable{
     }
 
     /// set value at position [x] and [y]
-    void setValueAt(int x, int y, int value){
+    void set(int x, int y, int value){
         if((x >= _m.ref.x) || (y >= _m.ref.y)){
             throw PnetException.custom("pnet_matrix_error_value_out_of_bounds");
         }
@@ -239,7 +239,7 @@ class PnetMatrix implements ffi.Finalizable{
     }
 
     /// sets all values of a matrix to the specified [value] 
-    void set(int value){
+    void setAll(int value){
         try{
             pnetDylib.pnet_matrix_set(_m, value);
         }
