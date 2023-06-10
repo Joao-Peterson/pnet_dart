@@ -6,8 +6,9 @@ libpnet? _pnetDylib;
 libpnet get pnetDylib {
     return _pnetDylib ??= libpnet(ffi.DynamicLibrary.open(
         resolveDylibPath(
-            'pnet',
-            path: "./example/build/linux/x64/debug/bundle/lib"
+            'libpnet',
+            path: "./build/linux/x64/debug/bundle/lib"
+            // path: "./example/build/linux/x64/debug/bundle/lib"
         ),
     ));
 }

@@ -1,26 +1,59 @@
+import 'dart:convert';
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart';
-import 'package:pnet_dart/src/pnet_matrix.dart';
-import 'bindings.dart';
+import 'dart:isolate';
+import 'dart:typed_data';
+import 'pnet_matrix.dart';
 import 'dylib.dart';
+import 'bindings.dart';
 import 'pnet_error.dart';
 
+/// callback for the pnet 
+typedef pnetCallback<cbData> = void Function(cbData?, int transition);
+
 /// class that represents a petrinet
-class Pnet implements ffi.Finalizable{
+class Pnet<cbDataT> implements ffi.Finalizable{
 
     // ------------------------------------------------------------ Members ------------------------------------------------------------
 
     /// pointer to native type petrinet
     late ffi.Pointer<pnet_t> _pnet;
 
+    //TODO(peterson): reenable this when [https://github.com/dart-lang/sdk/issues/49083] gets merged
     /// finalizer used to call native delete methods on dart GC free
-    static final _finalizer = ffi.NativeFinalizer(pnetDylib.native_pnet_delete.cast());
+    // static final _finalizer_native = ffi.NativeFinalizer(pnetDylib.native_pnet_delete.cast());
 
     /// callback to call on event 
-    Function(dynamic)? _callback;
+    pnetCallback? _callback;
 
     /// callback data to use on event 
-    dynamic _callbackData;
+    cbDataT? _callbackData;
+
+    // ------------------------------------------------------------ Native lib stuff ---------------------------------------------------
+
+    /// call dart lib init once
+    static bool _libInitFlag = false;
+
+    /// initialize dart native lib
+    static bool _libInit(){
+        if(!_libInitFlag){
+            if(pnetDylib.initDartApiDl(ffi.NativeApi.initializeApiDLData) != 0){
+                return false;
+            } 
+            _libInitFlag = true;
+        }
+
+        return true;
+    }
+
+    /// port
+    late ReceivePort _port;
+
+    /// callback for port receiving
+    void _portOnData(dynamic message){
+        int transition = message as int;
+        _callback!(_callbackData, transition);                                      // call dart callback. This _callback is called inside _portOnData that is called inside .listen on the Receive port, all in the event loop, or so i'm told XD         
+    } 
 
     // ------------------------------------------------------------ Constructors -------------------------------------------------------
 
@@ -45,16 +78,18 @@ class Pnet implements ffi.Finalizable{
         List<int>? transitionsDelay,
         List<List<int>>? inputsMap,
         List<List<int>>? outputsMap,
-        Function(dynamic)? callback,
-        dynamic data
+        pnetCallback? callback,
+        cbDataT? data
     }){
+        if(!_libInit()){                                                            // init lib
+            throw PnetException.custom(PnetError.errorCouldNotIniializeNativeLib);
+        }
+        
+        _port = ReceivePort()..listen(_portOnData);                                 // create a receiveport and add handler onData
+
         // create pnet
         // all optional arguments are checked and exchanged by NULL ptr if necessary
-        // callback is NULL by default
-        // TODO: scheme for using dart threads to check the pnet for events, then calling a dart callback on this thread, 
-        // and in the C implement a function to check for events synchronously, or make a c default callback that sets a global boolean visible to dart.
-        // maybe even throw async functionalitty in there somehow    
-        _pnet = pnetDylib.m_pnet_new(
+        _pnet = pnetDylib.m_pnet_new_fromdart(
             (negArcsMap != null ? PnetMatrix.newNative(negArcsMap) : ffi.nullptr), 
             (posArcsMap != null ? PnetMatrix.newNative(posArcsMap) : ffi.nullptr), 
             (inhibitArcsMap != null ? PnetMatrix.newNative(inhibitArcsMap) : ffi.nullptr), 
@@ -63,21 +98,96 @@ class Pnet implements ffi.Finalizable{
             (transitionsDelay != null ? PnetMatrix.newNative([transitionsDelay]) : ffi.nullptr), 
             (inputsMap != null ? PnetMatrix.newNative(inputsMap) : ffi.nullptr), 
             (outputsMap != null ? PnetMatrix.newNative(outputsMap) : ffi.nullptr), 
-            ffi.nullptr, 
-            ffi.nullptr
+            _port.sendPort.nativePort
         );
 
         _callback = callback;
         _callbackData = data;
 
-        if(pnetDylib.pnet_get_error() != pnet_error_t.pnet_info_ok){
+        if(pnetDylib.pnet_get_error() != pnet_error_t.pnet_info_ok){                // check for errors
+            if(_pnet != ffi.nullptr){
+                pnetDylib.pnet_delete(_pnet);
+            }
             throw PnetException();
         }
+        
+        //TODO(peterson): reenable this when [https://github.com/dart-lang/sdk/issues/49083] gets merged
+        // _finalizer_native.attach(this, _pnet.cast(), detach: this);                 // call finalizer (native pnet_delete) on pnet before dart GC frees this Pnet instance
+    }
 
-        _finalizer.attach(this, _pnet.cast());                                      // call finalizer (native pnet_delete) on pnet before dart GC frees this Pnet instance
+    /// deserializes data into a new petri net
+    /// [data]          array of bytes from the file format .pnet
+    /// [callback]      callback function of type pnet_callback_t that is called after firing operations asynchronously, useful for timed transitions
+    /// [callbackData]  data given by the user to passed on call to the callback function in it's data parameter. A void pointer
+    Pnet.deserialize(Uint8List data, pnetCallback callback, cbDataT callbackData){
+        var nativedata = malloc<ffi.Uint8>(data.length);
+
+        for(var i = 0; i < data.length; i++)                                        // create native data array
+            nativedata.elementAt(i).value = data[i];
+
+        if(!_libInit()){                                                            // init lib
+            throw PnetException.custom(PnetError.errorCouldNotIniializeNativeLib);
+        }
+        
+        this._port = ReceivePort()..listen(_portOnData);                            // create a receiveport and add handler onData
+
+        this._pnet = pnetDylib.pnet_deserialize_fromdart(nativedata.cast<ffi.Void>(), data.length, this._port.sendPort.nativePort);
+        malloc.free(nativedata);
+
+        if(pnetDylib.pnet_get_error() != pnet_error_t.pnet_info_ok){                // check for errors
+            if(_pnet != ffi.nullptr){
+                pnetDylib.pnet_delete(_pnet);
+            }
+            throw PnetException();
+        }       
+
+        this._callback = callback;
+        this._callbackData = callbackData;
+    }
+
+    /// loads from file into a new petri net
+    /// [data]          array of bytes from the file format .pnet
+    /// [callback]      callback function of type pnet_callback_t that is called after firing operations asynchronously, useful for timed transitions
+    /// [callbackData]  data given by the user to passed on call to the callback function in it's data parameter. A void pointer
+    Pnet.load(String filename, pnetCallback callback, cbDataT callbackData){
+        if(!_libInit()){                                                            // init lib
+            throw PnetException.custom(PnetError.errorCouldNotIniializeNativeLib);
+        }
+        
+        this._port = ReceivePort()..listen(_portOnData);                            // create a receiveport and add handler onData
+
+        var fname = filename.toNativeUtf8();
+
+        this._pnet = pnetDylib.pnet_load_fromdart(fname.cast<ffi.Char>(), this._port.sendPort.nativePort);
+        malloc.free(fname);
+
+        if(pnetDylib.pnet_get_error() != pnet_error_t.pnet_info_ok){                // check for errors
+            if(_pnet != ffi.nullptr){
+                pnetDylib.pnet_delete(_pnet);
+            }
+            throw PnetException();
+        }       
+
+        this._callback = callback;
+        this._callbackData = callbackData;
+    }
+
+    //TODO(peterson): remove this when [https://github.com/dart-lang/sdk/issues/49083] gets merged
+    /// destroy instance, needed cause it free native memory and receivePort
+    void destroy(){
+        pnetDylib.pnet_delete(_pnet);
+        _port.close();
     }
 
     // ------------------------------------------------------------ Geters / Setters ---------------------------------------------------
+
+    /// get native pnet pointer
+    ffi.Pointer<pnet_t> get nativePnet{
+        if(_pnet == ffi.nullptr)
+            Exception("Native pnet is NULL");
+
+        return _pnet;
+    }
 
     /// get number of places
     bool get valid{
@@ -191,5 +301,39 @@ class Pnet implements ffi.Finalizable{
     PnetError sense(){
         pnetDylib.pnet_sense(_pnet);
         return PnetError.values[pnetDylib.pnet_get_error()];
+    }
+
+    /// serializes a petri net to a file format, including internal state!
+    Uint8List serialize(){
+        var size = malloc<ffi.Size>(2);
+        var data = pnetDylib.pnet_serialize(this._pnet, size).cast<ffi.Uint8>();
+
+        if(pnetDylib.pnet_get_error() != pnet_error_t.pnet_info_ok){
+            malloc.free(size);
+            malloc.free(data);
+            throw PnetException();
+        }
+
+        var list = Uint8List(size.value);
+        for(var i = 0; i < size.value; i++){
+            list[i] = data.elementAt(i).value;
+        }
+        
+        malloc.free(size);
+        malloc.free(data);
+
+        return list;
+    } 
+    
+    /// serializes a petri net and save it to a file
+    void save(String filename){
+        var fname = filename.toNativeUtf8();
+        pnetDylib.pnet_save(this._pnet, fname.cast<ffi.Char>());
+
+        malloc.free(fname);
+
+        if(pnetDylib.pnet_get_error() != pnet_error_t.pnet_info_ok){
+            throw PnetException();
+        }
     }
 }

@@ -18,6 +18,83 @@ class libpnet {
 			lookup)
 		: _lookup = lookup;
 
+	// ------------------------------------------------------ pnet dart api dl -----------------------------------------------------------
+
+    /// initialize dart native api
+    int initDartApiDl(ffi.Pointer<ffi.Void> data){
+        return _init_dart_api_dl(data);
+    }
+
+	late final _init_dart_api_dlPtr = _lookup<ffi.NativeFunction<ffi.IntPtr Function(ffi.Pointer<ffi.Void>)>>('init_dart_api_dl');
+	
+    late final _init_dart_api_dl = _init_dart_api_dlPtr.asFunction<int Function(ffi.Pointer<ffi.Void>)>();
+
+    /// call to m_pnet_new to inject the common callback
+    ffi.Pointer<pnet_t> m_pnet_new_fromdart(
+		ffi.Pointer<pnet_matrix_t> neg_arcs_map,
+		ffi.Pointer<pnet_matrix_t> pos_arcs_map,
+		ffi.Pointer<pnet_matrix_t> inhibit_arcs_map,
+		ffi.Pointer<pnet_matrix_t> reset_arcs_map,
+		ffi.Pointer<pnet_matrix_t> places_init,
+		ffi.Pointer<pnet_matrix_t> transitions_delay,
+		ffi.Pointer<pnet_matrix_t> inputs_map,
+		ffi.Pointer<pnet_matrix_t> outputs_map,
+		int sendPort
+	) {
+		return _m_pnet_new_fromdart(
+		neg_arcs_map,
+		pos_arcs_map,
+		inhibit_arcs_map,
+		reset_arcs_map,
+		places_init,
+		transitions_delay,
+		inputs_map,
+		outputs_map,
+		sendPort,
+		);
+	}
+
+	late final _m_pnet_new_fromdartPtr = _lookup<
+		ffi.NativeFunction<
+			ffi.Pointer<pnet_t> Function(
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Pointer<pnet_matrix_t>,
+				ffi.Int64)>>('m_pnet_new_fromdart');
+
+	late final _m_pnet_new_fromdart = _m_pnet_new_fromdartPtr.asFunction<
+		ffi.Pointer<pnet_t> Function(
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			ffi.Pointer<pnet_matrix_t>,
+			int)>();
+
+    /// call to pnet_deserialize to inject the common callback
+    ffi.Pointer<pnet_t> pnet_deserialize_fromdart(ffi.Pointer<ffi.Void> data, int size, int send_port){
+        return _pnet_deserialize_fromdart(data, size, send_port);
+    }
+    
+    late final _pnet_deserialize_fromdartPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pnet_t> Function(ffi.Pointer<ffi.Void> data, ffi.Size size, ffi.Int64 send_port)>>('pnet_deserialize_fromdart');
+	late final _pnet_deserialize_fromdart = _pnet_deserialize_fromdartPtr.asFunction<ffi.Pointer<pnet_t> Function(ffi.Pointer<ffi.Void> data, int size, int send_port)>();
+
+    /// call to pnet_load to inject the common callback
+    ffi.Pointer<pnet_t> pnet_load_fromdart(ffi.Pointer<ffi.Char> filename, int send_port){
+        return _pnet_load_fromdart(filename, send_port);
+    }
+    
+    late final _pnet_load_fromdartPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pnet_t> Function(ffi.Pointer<ffi.Char>, ffi.Int64)>>('pnet_load_fromdart');
+	late final _pnet_load_fromdart = _pnet_load_fromdartPtr.asFunction<ffi.Pointer<pnet_t> Function(ffi.Pointer<ffi.Char>, int)>();
+
 	// ------------------------------------------------------ pnet_error -----------------------------------------------------------------
 	
 	/// @brief get error code from latest execution
@@ -647,6 +724,57 @@ class libpnet {
 			'pnet_sense');
 	late final _pnet_sense =
 		_pnet_sensePtr.asFunction<void Function(ffi.Pointer<pnet_t>)>();
+
+    // ------------------------------------------------------ file handling ---------------------------------------------------------
+
+    ///
+    /// @brief serializes a petri net to a file format, including internal state!
+    ///
+    ffi.Pointer<ffi.Void> pnet_serialize(ffi.Pointer<pnet_t> pnet, ffi.Pointer<ffi.Size> size){
+        return _pnet_serialize(pnet, size);
+    }
+
+    late final _pnet_serializePtr = _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<pnet_t>, ffi.Pointer<ffi.Size>)>>('pnet_serialize');
+	late final _pnet_serialize = _pnet_serializePtr.asFunction<ffi.Pointer<ffi.Void> Function(ffi.Pointer<pnet_t>, ffi.Pointer<ffi.Size>)>();
+
+    ///
+    /// @brief serializes a petri net and save it to a file
+    ///
+    void pnet_save(ffi.Pointer<pnet_t> pnet, ffi.Pointer<ffi.Char> filename){
+        return _pnet_save(pnet, filename);
+    }
+
+    late final _pnet_savePtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<pnet_t>, ffi.Pointer<ffi.Char>)>>('pnet_save');
+	late final _pnet_save = _pnet_savePtr.asFunction<void Function(ffi.Pointer<pnet_t>, ffi.Pointer<ffi.Char>)>();
+
+    ///
+    /// @brief deserialize a pnet
+    ///
+    ffi.Pointer<pnet_t> pnet_deserialize(ffi.Pointer<ffi.Void> data, int size, pnet_callback_t callback, ffi.Pointer<ffi.Void> callback_data){
+        return _pnet_deserialize(data, size, callback, callback_data);
+    }
+
+    late final _pnet_deserializePtr   = _lookup<ffi.NativeFunction<ffi.Pointer<pnet_t> Function(ffi.Pointer<ffi.Void>, ffi.Size, pnet_callback_t, ffi.Pointer<ffi.Void>)>>('pnet_deserialize');
+	late final _pnet_deserialize = _pnet_deserializePtr.asFunction<ffi.Pointer<pnet_t> Function(ffi.Pointer<ffi.Void>, int, pnet_callback_t, ffi.Pointer<ffi.Void>)>();
+
+    ///
+    /// @brief read .pnet file and load into a pnet_t
+    ///
+    ffi.Pointer<pnet_t> pnet_load(ffi.Pointer<ffi.Char> filename, pnet_callback_t callback, ffi.Pointer<ffi.Void> callback_data){
+        return _pnet_load(filename, callback, callback_data);
+    }
+
+    late final _pnet_loadPtr = _lookup<ffi.NativeFunction<ffi.Pointer<pnet_t> Function(ffi.Pointer<ffi.Char>, pnet_callback_t, ffi.Pointer<ffi.Void>)>>('pnet_load');
+	late final _pnet_load = _pnet_loadPtr.asFunction<ffi.Pointer<pnet_t> Function(ffi.Pointer<ffi.Char>, pnet_callback_t, ffi.Pointer<ffi.Void>)>();
+
+    // ------------------------------------------------------ compilers -------------------------------------------------------------
+
+    ffi.Pointer<ffi.Char> pnet_compile_il_weg_tpw0(ffi.Pointer<pnet_t> pnet, int input_offset, int output_offset, int transition_offset, int place_offset, int timer_offset, int timer_min){
+        return _pnet_compile_il_weg_tpw0(pnet, input_offset, output_offset, transition_offset, place_offset, timer_offset, timer_min);
+    }
+
+    late final _pnet_compile_il_weg_tpw0Ptr = _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<pnet_t> pnet, ffi.Int input_offset, ffi.Int output_offset, ffi.Int transition_offset, ffi.Int place_offset, ffi.Int timer_offset, ffi.Int timer_min)>>('pnet_compile_il_weg_tpw0');
+	late final _pnet_compile_il_weg_tpw0 = _pnet_compile_il_weg_tpw0Ptr.asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<pnet_t> pnet, int input_offset, int output_offset, int transition_offset, int place_offset, int timer_offset, int timer_min)>();
 }
 
 // ------------------------------------------------------ types -----------------------------------------------------------------

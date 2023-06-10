@@ -8,7 +8,7 @@ import 'package:pnet_dart/src/pnet.dart';
 
 void main() {
 
-	test("Simple pnet test", () {
+	test("Simple pnet test", () async {
         Pnet pnet;
         
         try {
@@ -24,13 +24,14 @@ void main() {
                     [ 0],
                 ],
                 placesInit: [1, 0, 32],
+                transitionsDelay: [200]
             );
         } catch (e) {
             fail(e.toString());
         }
 
-
         pnet.fire();
+        await new Future.delayed(Duration(milliseconds: 300));        
 
         expect(pnet.places, [0, 1, 30]);
 	});

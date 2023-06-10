@@ -1,33 +1,44 @@
 import 'dart:ffi' as ffi;
-import 'package:ffi/ffi.dart';
 import 'dylib.dart';
 
 /// errors return by pnet methods
 enum PnetError {
-	ok,
-	infoNoNegArcsNorInhibitArcsProvidedNoTransitionWillBeSensibilized,
-	infoNoWeightedArcsNorResetArcsProvidedNoTokenWillBeMovedOrSet,
-	infoInputsWerePassedButNoInputMapWasSetWhenThePetriNetWasCreated,
-	infoNoCallbackFunctionWasPassedWhileUsingTimedTransitionsWatchOut,
-	errorNoArcsWereGiven,
-	errorPlaceInitMustHaveOnlyOneRow,
-	errorTransitionsDelayMustHaveOnlyOneRow,
-	errorPlacesInitMustNotBeNull,
-	errorPosArcsHasIncorrectNumberOfPlaces,
-	errorPosArcsHasIncorrectNumberOfTransitions,
-	errorInhibitArcsHasIncorrectNumberOfPlaces,
-	errorInhibitArcsHasIncorrectNumberOfTransitions,
-	errorResetArcsHasIncorrectNumberOfPlaces,
-	errorResetArcsHasIncorrectNumberOfTransitions,
-	errorPlacesInitHasIncorrectNumberOfPlacesOnItsFirstRow,
-	errorTransitionsDelayHasDifferentNumberOfTransitionsInItsFirstRowThanInTheArcs,
-	errorInputsHasDifferentNumberOfTransitionsInItsFirstRowThanInTheArcs,
-	errorInputsThereAreMoreThanOneInputPerTransition,
-	errorOutputsHasDifferentNumberOfPlacesInItsFirstColumnsThanInTheArcs,
-	errorPnetStructPointerPassedAsArgumentIsNull,
-	errorInputMatrixArgumentSizeDoesntMatchTheInputSizeOnThePnetProvided,
-	errorThreadCouldNotBeCreated,
-    errorUnknown,
+    pnetInfoOk,
+    pnetInfoNoNegArcsNorInhibitArcsProvidedNoTransitionWillBeSensibilized,
+    pnetInfoNoWeightedArcsNorResetArcsProvidedNoTokenWillBeMovedOrSet,
+    pnetInfoInputsWerePassedButNoInputMapWasSetWhenThePetriNetWasCreated,
+    pnetInfoNoCallbackFunctionWasPassedWhileUsingTimedTransitionsWatchOut,
+    pnetErrorNoArcsWereGiven,
+    pnetErrorPlaceInitMustHaveOnlyOneRow,
+    pnetErrorTransitionsDelayMustHaveOnlyOneRow,
+    pnetErrorPlacesInitMustNotBeNull,
+    pnetErrorPosArcsHasIncorrectNumberOfPlaces,
+    pnetErrorPosArcsHasIncorrectNumberOfTransitions,
+    pnetErrorInhibitArcsHasIncorrectNumberOfPlaces,
+    pnetErrorInhibitArcsHasIncorrectNumberOfTransitions,
+    pnetErrorResetArcsHasIncorrectNumberOfPlaces,
+    pnetErrorResetArcsHasIncorrectNumberOfTransitions,
+    pnetErrorPlacesInitHasIncorrectNumberOfPlacesOnItsFirstRow,
+    pnetErrorTransitionsDelayHasDifferentNumberOfTransitionsInItsFirstRowThanInTheArcs,
+    pnetErrorInputsHasDifferentNumberOfTransitionsInItsFirstRowThanInTheArcs,
+    pnetErrorInputsThereAreMoreThanOneInputPerTransition,
+    pnetErrorOutputsHasDifferentNumberOfPlacesInItsFirstColumnsThanInTheArcs,
+    pnetErrorPnetStructPointerPassedAsArgumentIsNull,
+    pnetErrorInputMatrixArgumentSizeDoesntMatchTheInputSizeOnThePnetProvided,
+    pnetErrorThreadCouldNotBeCreated,
+    pnetErrorMatrixPassedIsNull,
+    pnetErrorMatrixMinimalSizeIs1By1,
+    pnetErrorMatrixIndexXYOutOfRange,
+    pnetErrorMatricesShouldBeOfTheSameSize,
+    pnetErrorMatricesShouldBeSquareMatrices,
+    pnetErrorMatricesShouldBeTranposedEquivalents,
+    pnetErrorMatrixTooBigToSerialize,
+    pnetInfoPnetNotValidToSerialize,
+    pnetErrorFileInvalidFiletype,
+    pnetErrorFileInvalidChecksum,
+    pnetErrorFileCorruptedData,
+    
+    errorCouldNotIniializeNativeLib
 }
 
 /// exception for pnet. Wraps libpnet error handling
@@ -43,8 +54,9 @@ class PnetException implements Exception{
     }
 
     /// throw custom pnet exception
-    PnetException.custom(this.message){
-        code = 100;                                                                 // default code for custom messages
+    PnetException.custom(PnetError code, {String? message}){
+        this.code = code as int;
+        this.message = message ?? "Pnet error: ${PnetError.values[this.code].toString()}";
     }
 
     /// custom toString for the exception

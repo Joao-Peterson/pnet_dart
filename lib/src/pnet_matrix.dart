@@ -49,6 +49,11 @@ class PnetMatrix implements ffi.Finalizable{
         return m;
     }
 
+    /// call native free on native matrix
+    static void destroyNative(ffi.Pointer<pnet_matrix_t> matrix){
+        pnetDylib.pnet_matrix_delete(matrix);
+    }
+
     // ------------------------------------------------------------ Constructors -------------------------------------------------------
 
     /// creates a matrix by passing a 2d list of [values]
@@ -111,19 +116,11 @@ class PnetMatrix implements ffi.Finalizable{
 
     /// get value at position [x] and [y]
     int get(int x, int y){
-        if((x >= _m.ref.x) || (y >= _m.ref.y)){
-            throw PnetException.custom("pnet_matrix_error_value_out_of_bounds");
-        }
-
         return _m.ref.m.elementAt(y).value.elementAt(x).value;
     }
 
     /// set value at position [x] and [y]
     void set(int x, int y, int value){
-        if((x >= _m.ref.x) || (y >= _m.ref.y)){
-            throw PnetException.custom("pnet_matrix_error_value_out_of_bounds");
-        }
-
         _m.ref.m.elementAt(y).value.elementAt(x).value = value;
     }
 
