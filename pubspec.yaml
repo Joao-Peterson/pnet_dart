@@ -1,5 +1,5 @@
 name: pnet_dart
-description: A new Flutter plugin project.
+description: This package provides a petri net implementation where you can define petri net's, define inputs and outputs, and save and read to file.
 version: 1.0.1
 homepage: https://github.com/Joao-Peterson/pnet_dart
 repository: https://github.com/Joao-Peterson/pnet_dart
