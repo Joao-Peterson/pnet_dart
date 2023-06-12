@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart';
 import 'dart:isolate';
@@ -9,7 +8,15 @@ import 'bindings.dart';
 import 'pnet_error.dart';
 
 /// callback for the pnet 
-typedef pnetCallback<cbData> = void Function(cbData?, int transition);
+typedef PnetCallback<cbData> = void Function(cbData?, int);
+
+/// input events for transitions
+abstract class PnetEvt{
+    static const int none       = 0;                                                /// No input event, transition will trigger if sensibilized. Same as 0
+    static const int posEdge    = 1;                                                /// The input must be 0 then 1 so the transition can trigger
+    static const int negEdge    = 2;                                                /// The input must be 1 then 0 so the transition can trigger
+    static const int anyEdge    = 3;                                                /// The input must be change state from 1 to 0 or vice versa
+}
 
 /// class that represents a petrinet
 class Pnet<cbDataT> implements ffi.Finalizable{
@@ -24,7 +31,7 @@ class Pnet<cbDataT> implements ffi.Finalizable{
     // static final _finalizer_native = ffi.NativeFinalizer(pnetDylib.native_pnet_delete.cast());
 
     /// callback to call on event 
-    pnetCallback? _callback;
+    PnetCallback? _callback;
 
     /// callback data to use on event 
     cbDataT? _callbackData;
@@ -78,7 +85,7 @@ class Pnet<cbDataT> implements ffi.Finalizable{
         List<int>? transitionsDelay,
         List<List<int>>? inputsMap,
         List<List<int>>? outputsMap,
-        pnetCallback? callback,
+        PnetCallback? callback,
         cbDataT? data
     }){
         if(!_libInit()){                                                            // init lib
@@ -119,7 +126,7 @@ class Pnet<cbDataT> implements ffi.Finalizable{
     /// [data]          array of bytes from the file format .pnet
     /// [callback]      callback function of type pnet_callback_t that is called after firing operations asynchronously, useful for timed transitions
     /// [callbackData]  data given by the user to passed on call to the callback function in it's data parameter. A void pointer
-    Pnet.deserialize(Uint8List data, pnetCallback callback, cbDataT callbackData){
+    Pnet.deserialize(Uint8List data, PnetCallback callback, cbDataT callbackData){
         var nativedata = malloc<ffi.Uint8>(data.length);
 
         for(var i = 0; i < data.length; i++)                                        // create native data array
@@ -149,7 +156,7 @@ class Pnet<cbDataT> implements ffi.Finalizable{
     /// [data]          array of bytes from the file format .pnet
     /// [callback]      callback function of type pnet_callback_t that is called after firing operations asynchronously, useful for timed transitions
     /// [callbackData]  data given by the user to passed on call to the callback function in it's data parameter. A void pointer
-    Pnet.load(String filename, pnetCallback callback, cbDataT callbackData){
+    Pnet.load(String filename, PnetCallback callback, cbDataT callbackData){
         if(!_libInit()){                                                            // init lib
             throw PnetException.custom(PnetError.errorCouldNotIniializeNativeLib);
         }
@@ -284,13 +291,13 @@ class Pnet<cbDataT> implements ffi.Finalizable{
     // ------------------------------------------------------------ Methods ------------------------------------------------------------
 
     /// fire the petri net
-    PnetError fire({List<List<int>>? inputs}){
+    PnetError fire({List<int>? inputs}){
         if(inputs == null){
             pnetDylib.m_pnet_fire(_pnet, ffi.nullptr);
         }
         else{
             // get inputs as pnet_matrix
-            ffi.Pointer<pnet_matrix_t> inMatrix = PnetMatrix.newNative(inputs);
+            ffi.Pointer<pnet_matrix_t> inMatrix = PnetMatrix.newNative([inputs]);
             pnetDylib.m_pnet_fire(_pnet, inMatrix);
         }
 

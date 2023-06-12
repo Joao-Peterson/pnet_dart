@@ -1,10 +1,7 @@
 import 'dart:ffi' as ffi;
 import 'package:ffi/ffi.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pnet_dart/src/dylib.dart';
-import 'package:pnet_dart/src/pnet_error.dart';
-import 'package:pnet_dart/src/pnet_matrix.dart';
-import 'package:pnet_dart/src/pnet.dart';
+import 'package:pnet_dart/pnet.dart';
 
 void main() {
 
@@ -31,7 +28,7 @@ void main() {
         }
 
         pnet.fire();
-        await new Future.delayed(Duration(milliseconds: 300));        
+        await Future.delayed(const Duration(milliseconds: 300));        
 
         expect(pnet.places, [0, 1, 30]);
 	});
