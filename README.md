@@ -1,4 +1,4 @@
-![](https://img.shields.io/github/license/Joao-Peterson/pnet) ![](https://img.shields.io/badge/Version-1.0.0-brightgreen) ![](https://img.shields.io/github/last-commit/Joao-Peterson/pnet_dart)
+![](https://img.shields.io/github/license/Joao-Peterson/pnet) ![](https://img.shields.io/badge/Version-1.0.1-brightgreen) ![](https://img.shields.io/github/last-commit/Joao-Peterson/pnet_dart)
 
 # pnet_dart
 
@@ -12,17 +12,17 @@ This implementation can create high level timed petri nets, with weighted arcs, 
 - [pnet\_dart](#pnet_dart)
 - [TOC](#toc)
 - [Usage](#usage)
-	- [Arguments](#arguments)
-		- [Weighted arcs](#weighted-arcs)
-		- [Inhibit arcs](#inhibit-arcs)
-		- [Reset arcs](#reset-arcs)
-		- [Input events](#input-events)
-		- [Delay](#delay)
-		- [Outputs](#outputs)
-		- [Callback](#callback)
-	- [Error handling](#error-handling)
+  - [Arguments](#arguments)
+    - [Weighted arcs](#weighted-arcs)
+    - [Inhibit arcs](#inhibit-arcs)
+    - [Reset arcs](#reset-arcs)
+    - [Input events](#input-events)
+    - [Delay](#delay)
+    - [Outputs](#outputs)
+    - [Callback](#callback)
+  - [Error handling](#error-handling)
 - [TODO](#todo)
-	- [Path and variables in dylib](#path-and-variables-in-dylib)
+  - [Path and variables in dylib](#path-and-variables-in-dylib)
 
 # Usage
 

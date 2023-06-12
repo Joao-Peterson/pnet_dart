@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pnet_dart/pnet.dart';
+import 'package:pnet_dart/pnet_dart.dart';
 
 void main() {
   runApp(const MyApp());
